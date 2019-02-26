@@ -21,7 +21,6 @@ const ItemCtrl = (function () {
 	// Fake DATA  State to update
 	const state = {
 		items: [
-
 		],
 		currentItem: null,
 		totalCalories: 0
@@ -49,6 +48,22 @@ const ItemCtrl = (function () {
 			return newItem;
 
 		},
+		getItemById: function (id) {
+			let found = null;
+			state.items.forEach(function (item) {
+				if (item.id === id) {
+					found = item;
+				}
+			});
+			return found;
+		},
+		setSelectedItem: function (item) {
+			state.currentItem = item;
+		},
+
+		getCurrentItem: function () {
+			return state.currentItem;
+		},
 		totalCalories: function () {
 			let total = 0;
 			state.items.forEach(function (item) {
@@ -74,6 +89,9 @@ const UICtrl = (function () {
 	const UISelectors = {
 		itemList: "#item-list",
 		addBtn: ".add-btn",
+		updateBtn: ".update-btn",
+		deleteBtn: ".delete-btn",
+		backBtn: ".back-btn",
 		calorieInput: "#item-calories",
 		mealItem: "#item-name",
 		totalCalories: '.total-calories'
@@ -110,11 +128,11 @@ const UICtrl = (function () {
 			// Add id
 			li.id = `item-${item.id}`;
 
-			// Add Markup html
+			// Add Markup html classList
 			li.innerHTML = `
 			<strong> ${item.name}:</strong><em> ${item.calories}</em>
 				<a href="#" class="secondary-content">
-				<i class="edit fa fa-pencil"></i>
+				<i class="edit-item fa fa-pencil"></i>
 				</a>
 			`;
 			document.querySelector(UISelectors.itemList).insertAdjacentElement('beforeend', li);
@@ -123,11 +141,35 @@ const UICtrl = (function () {
 			document.querySelector(UISelectors.mealItem).value = "";
 			document.querySelector(UISelectors.calorieInput).value = "";
 		},
+		updateItemToForm: function () {
+			document.querySelector(UISelectors.mealItem).value = ItemCtrl.getCurrentItem().name;
+			document.querySelector(UISelectors.calorieInput).value = ItemCtrl.getCurrentItem().calories;
+			UICtrl.showEditState();
+		},
 		hideList: function () {
 			document.querySelector(UISelectors.itemList).style.display = 'none';
 		},
 		showCalories: function (totalCalories) {
 			document.querySelector(UISelectors.totalCalories).textContent = totalCalories;
+		},
+		showEditState: function () {
+
+
+			document.querySelector(UISelectors.updateBtn).style.display = 'inline';
+
+			document.querySelector(UISelectors.deleteBtn).style.display = 'inline';
+			document.querySelector(UISelectors.backBtn).style.display = 'inline';
+			document.querySelector(UISelectors.addBtn).style.display = 'none';
+
+		},
+		clearEditState: function () {
+			UICtrl.clearInput();
+
+			document.querySelector(UISelectors.updateBtn).style.display = 'none';
+			document.querySelector(UISelectors.addBtn).style.display = 'inline';
+			document.querySelector(UISelectors.deleteBtn).style.display = 'none';
+			document.querySelector(UISelectors.backBtn).style.display = 'none';
+
 		},
 		getSelectors: function () {
 			return UISelectors;
@@ -147,7 +189,11 @@ const App = (function (ItemCtrl, UICtrl) {
 		const UserSelectors = UICtrl.getSelectors();
 
 		document.querySelector(UserSelectors.addBtn).addEventListener('click', itemAddSubmit);
+
+		// Edit icon 
+		document.querySelector(UserSelectors.itemList).addEventListener('click', itemEdit);
 	}
+
 
 	const itemAddSubmit = function (e) {
 
@@ -166,8 +212,6 @@ const App = (function (ItemCtrl, UICtrl) {
 			// UI calories add
 			UICtrl.showCalories(totalCalories);
 
-
-
 			// Clear Input
 			UICtrl.clearInput();
 
@@ -175,9 +219,33 @@ const App = (function (ItemCtrl, UICtrl) {
 		}
 		e.preventDefault();
 	}
+	// Update/Edit /Submit
+	const itemEdit = function (e) {
+		if (e.target.classList.contains('edit-item')) {
+			// get list item id
+			const listId = e.target.parentNode.parentNode.id;
+
+
+			const listArr = listId.split('-');
+			const id = parseInt(listArr[1]);
+
+			// Get Items
+			const selectedItem = ItemCtrl.getItemById(id);
+
+			// Current Item
+			ItemCtrl.setSelectedItem(selectedItem);
+
+			UICtrl.updateItemToForm();
+
+		}
+		e.preventDefault();
+	}
 
 	return {
 		init: function () {
+			// Clear Edit 
+			UICtrl.clearEditState();
+
 
 			console.log(ItemCtrl.logData());
 			const items = ItemCtrl.getItems()
